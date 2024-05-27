@@ -85,6 +85,19 @@ func (g *Game) Next() {
 	g.updateFront()
 }
 
+func (g *Game) Restart() {
+	for y := range g.rows {
+		for x := range g.cols {
+			g.back[y][x] = dead
+			if rand.Int()%2 == 0 {
+				g.back[y][x] = alive
+			}
+		}
+	}
+
+	g.updateFront()
+}
+
 func (g *Game) updateFront() {
 	for y := range g.rows {
 		copy(g.front[y], g.back[y])
