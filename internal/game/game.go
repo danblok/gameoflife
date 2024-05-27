@@ -8,9 +8,16 @@ import (
 	"time"
 )
 
+const (
+	dead  rune = ' '
+	alive rune = '\u25A0'
+)
+
 type Game struct {
 	rows, cols  int
 	front, back [][]rune
+
+	updateTime time.Duration
 }
 
 func New(rows, cols int) *Game {
@@ -21,10 +28,11 @@ func New(rows, cols int) *Game {
 	front := make([][]rune, rows)
 
 	g := &Game{
-		rows:  rows,
-		cols:  cols,
-		back:  back,
-		front: front,
+		rows:       rows,
+		cols:       cols,
+		back:       back,
+		front:      front,
+		updateTime: 16 * time.Millisecond,
 	}
 
 	for y := range rows {
@@ -32,9 +40,9 @@ func New(rows, cols int) *Game {
 		front[y] = make([]rune, cols)
 		for x := range back[y] {
 			if rand.Int()%2 == 0 {
-				back[y][x] = '.'
+				back[y][x] = dead
 			} else {
-				back[y][x] = '#'
+				back[y][x] = alive
 			}
 		}
 	}
@@ -42,6 +50,10 @@ func New(rows, cols int) *Game {
 	g.updateFront()
 
 	return g
+}
+
+func (g *Game) SetUpdateTime(t time.Duration) {
+	g.updateTime = t
 }
 
 func (g *Game) Start() {
@@ -52,7 +64,7 @@ func (g *Game) Start() {
 	for {
 		g.Print()
 		g.Next()
-		time.Sleep(7 * time.Millisecond)
+		time.Sleep(g.updateTime)
 	}
 }
 
@@ -60,12 +72,12 @@ func (g *Game) Next() {
 	for y := range g.back {
 		for x := range g.back[y] {
 			ns := g.countNeighbours(x, y)
-			if g.front[y][x] == '#' && (ns == 2 || ns == 3) {
-				g.back[y][x] = '#'
-			} else if g.front[y][x] == '.' && ns == 3 {
-				g.back[y][x] = '#'
+			if g.front[y][x] == alive && (ns == 2 || ns == 3) {
+				g.back[y][x] = alive
+			} else if g.front[y][x] == dead && ns == 3 {
+				g.back[y][x] = alive
 			} else {
-				g.back[y][x] = '.'
+				g.back[y][x] = dead
 			}
 		}
 	}
@@ -90,7 +102,7 @@ func (g *Game) countNeighbours(cx, cy int) int {
 				continue
 			}
 
-			if g.front[yy][xx] == '#' {
+			if g.front[yy][xx] == alive {
 				count++
 			}
 		}
